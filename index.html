@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0d0d0d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PhotoPress">
+<meta name="application-name" content="PhotoPress">
+<title>PhotoPress</title>
+
+<!-- PWA Manifest inline -->
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22PhotoPress%22%2C%22short_name%22%3A%22PhotoPress%22%2C%22description%22%3A%22%D0%A1%D0%B6%D0%B0%D1%82%D0%B8%D0%B5%20%D1%84%D0%BE%D1%82%D0%BE%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230d0d0d%22%2C%22theme_color%22%3A%22%230d0d0d%22%2C%22orientation%22%3A%22portrait%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%253D%2527http%253A%252F%252Fwww.w3.org%252F2000%252Fsvg%2527%2520viewBox%253D%25270%25200%2520512%2520512%2527%253E%253Crect%2520width%253D%2527512%2527%2520height%253D%2527512%2527%2520fill%253D%2527%25230d0d0d%2527%252F%253E%253Ctext%2520x%253D%2527256%2527%2520y%253D%2527340%2527%2520font-size%253D%2527280%2527%2520text-anchor%253D%2527middle%2527%253E%25F0%259F%2597%259C%25EF%25B8%258F%253C%252Ftext%253E%253C%252Fsvg%253E%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D">
+
+<!-- Apple touch icon inline SVG -->
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%230d0d0d' rx='80'/><text x='256' y='340' font-size='280' text-anchor='middle'>🗜️</text></svg>">
+
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Barlow+Condensed:wght@300;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #161616;
+    --border: #2a2a2a;
+    --accent: #e8ff3c;
+    --accent2: #ff5733;
+    --text: #f0f0f0;
+    --muted: #666;
+    --mono: 'Space Mono', monospace;
+    --display: 'Barlow Condensed', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+  }
+
+  header {
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+  }
+  header h1 {
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: 2rem;
+    letter-spacing: -0.02em;
+    color: var(--accent);
+    line-height: 1;
+  }
+  header span {
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .install-btn {
+    margin-left: auto;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    border-radius: 3px;
+    cursor: pointer;
+    display: none;
+    white-space: nowrap;
+  }
+
+  main {
+    flex: 1;
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    max-width: 600px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  /* ─── OFFLINE BADGE ─── */
+  .offline-badge {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--accent2);
+    border-radius: 3px;
+    padding: 8px 12px;
+    font-size: 0.65rem;
+    color: var(--accent2);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    text-align: center;
+  }
+
+  /* ─── DROP ZONE ─── */
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 4px;
+    padding: 36px 20px;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+    transition: border-color 0.15s, background 0.15s;
+    background: var(--surface);
+    overflow: hidden;
+  }
+  .drop-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(232,255,60,0.04);
+  }
+  .drop-zone input[type=file] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+  .drop-zone .icon {
+    font-size: 3rem;
+    margin-bottom: 10px;
+    display: block;
+    filter: grayscale(1) brightness(0.5);
+    transition: filter 0.2s;
+  }
+  .drop-zone:hover .icon, .drop-zone.drag-over .icon { filter: none; }
+  .drop-zone .label {
+    font-family: var(--display);
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+  .drop-zone .sublabel {
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-top: 4px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .drop-zone .corner {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-color: var(--accent);
+    border-style: solid;
+    opacity: 0.6;
+  }
+  .drop-zone .corner.tl { top: 8px; left: 8px; border-width: 2px 0 0 2px; }
+  .drop-zone .corner.tr { top: 8px; right: 8px; border-width: 2px 2px 0 0; }
+  .drop-zone .corner.bl { bottom: 8px; left: 8px; border-width: 0 0 2px 2px; }
+  .drop-zone .corner.br { bottom: 8px; right: 8px; border-width: 0 2px 2px 0; }
+
+  /* ─── CONTROLS ─── */
+  .controls {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .ctrl-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .ctrl-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    flex-shrink: 0;
+    min-width: 70px;
+  }
+  .ctrl-val {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--accent);
+    min-width: 44px;
+    text-align: right;
+  }
+  input[type=range] {
+    -webkit-appearance: none;
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    background: var(--accent);
+    border-radius: 0;
+    cursor: pointer;
+    box-shadow: 0 0 0 3px var(--bg), 0 0 0 4px var(--accent);
+  }
+  .format-row { display: flex; gap: 8px; }
+  .fmt-btn {
+    flex: 1;
+    padding: 8px 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.12s;
+    border-radius: 2px;
+  }
+  .fmt-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(232,255,60,0.06);
+  }
+
+  /* ─── PROGRESS ─── */
+  .progress-bar {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    display: none;
+  }
+  .progress-bar .fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.2s;
+  }
+
+  /* ─── QUEUE ─── */
+  .queue-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .queue-title {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+  }
+  .clear-btn {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: var(--accent2);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .queue-list { display: flex; flex-direction: column; gap: 8px; }
+  .queue-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 10px 12px;
+    display: grid;
+    grid-template-columns: 48px 1fr auto;
+    gap: 10px;
+    align-items: center;
+    animation: slideIn 0.2s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .queue-item .thumb {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 2px;
+    background: var(--border);
+  }
+  .queue-item .info { overflow: hidden; }
+  .queue-item .fname {
+    font-size: 0.72rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+  .queue-item .sizes { font-size: 0.6rem; color: var(--muted); }
+  .queue-item .sizes .new { color: var(--accent); }
+  .queue-item .sizes .ratio { color: var(--accent2); font-weight: 700; }
+  .queue-item .dl-btn {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 2px;
+    width: 34px;
+    height: 34px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.12s;
+  }
+  .queue-item .dl-btn:active { background: #c8df00; }
+
+  /* ─── ACTION BAR ─── */
+  .action-bar {
+    position: sticky;
+    bottom: 0;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    gap: 10px;
+    max-width: 600px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  .btn-compress {
+    flex: 1;
+    padding: 14px;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: 1.1rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: background 0.12s, transform 0.08s;
+  }
+  .btn-compress:active { transform: scale(0.98); background: #c8df00; }
+  .btn-compress:disabled { background: var(--border); color: var(--muted); cursor: default; }
+  .btn-dl-all {
+    padding: 14px 16px;
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 3px;
+    white-space: nowrap;
+    transition: background 0.12s;
+    display: none;
+  }
+  .btn-dl-all:active { background: rgba(232,255,60,0.1); }
+
+  canvas { display: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>PhotoPress</h1>
+  <span>Сжатие фото</span>
+  <button class="install-btn" id="installBtn">⬇ Установить</button>
+</header>
+
+<main>
+  <div class="offline-badge" id="offlineBadge">⚡ Офлайн режим</div>
+
+  <div class="drop-zone" id="dropZone">
+    <div class="corner tl"></div><div class="corner tr"></div>
+    <div class="corner bl"></div><div class="corner br"></div>
+    <input type="file" id="fileInput" accept="image/*" multiple>
+    <span class="icon">🗜️</span>
+    <div class="label">Выбрать фото</div>
+    <div class="sublabel">или перетащить · JPG, PNG, WEBP</div>
+  </div>
+
+  <div class="controls">
+    <div class="ctrl-row">
+      <span class="ctrl-label">Качество</span>
+      <input type="range" id="qualitySlider" min="10" max="100" value="75">
+      <span class="ctrl-val" id="qualityVal">75%</span>
+    </div>
+    <div class="ctrl-row">
+      <span class="ctrl-label">Макс. px</span>
+      <input type="range" id="sizeSlider" min="0" max="8" value="4">
+      <span class="ctrl-val" id="sizeVal">2048</span>
+    </div>
+    <div class="ctrl-row">
+      <span class="ctrl-label">Формат</span>
+      <div class="format-row">
+        <button class="fmt-btn active" data-fmt="image/jpeg">JPEG</button>
+        <button class="fmt-btn" data-fmt="image/webp">WEBP</button>
+        <button class="fmt-btn" data-fmt="image/png">PNG</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="progress-bar" id="progressBar">
+    <div class="fill" id="progressFill"></div>
+  </div>
+
+  <div id="queueWrap" style="display:none; flex-direction:column; gap:10px;">
+    <div class="queue-header">
+      <span class="queue-title" id="queueTitle">Результаты</span>
+      <button class="clear-btn" id="clearBtn">× очистить</button>
+    </div>
+    <div class="queue-list" id="queueList"></div>
+  </div>
+</main>
+
+<div class="action-bar">
+  <button class="btn-compress" id="compressBtn" disabled>⚡ Сжать</button>
+  <button class="btn-dl-all" id="dlAllBtn">↓ Все</button>
+</div>
+
+<canvas id="canvas"></canvas>
+
+<script>
+// ─── SERVICE WORKER (blob trick — работает без сервера) ───
+const swCode = `
+const CACHE = 'photopress-v1';
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE).then(cache => cache.addAll([]))
+  );
+  self.skipWaiting();
+});
+self.addEventListener('activate', e => {
+  e.waitUntil(clients.claim());
+});
+self.addEventListener('fetch', e => {
+  e.respondWith(
+    caches.match(e.request).then(cached => cached || fetch(e.request).then(resp => {
+      const clone = resp.clone();
+      caches.open(CACHE).then(c => c.put(e.request, clone));
+      return resp;
+    }).catch(() => cached))
+  );
+});
+`;
+
+if ('serviceWorker' in navigator) {
+  const blob = new Blob([swCode], { type: 'application/javascript' });
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl).catch(() => {});
+}
+
+// ─── PWA INSTALL ───
+let deferredPrompt = null;
+const installBtn = document.getElementById('installBtn');
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installBtn.style.display = 'block';
+});
+installBtn.addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  if (outcome === 'accepted') installBtn.style.display = 'none';
+  deferredPrompt = null;
+});
+window.addEventListener('appinstalled', () => {
+  installBtn.style.display = 'none';
+});
+
+// ─── OFFLINE BADGE ───
+function updateOnline() {
+  document.getElementById('offlineBadge').style.display = navigator.onLine ? 'none' : 'block';
+}
+window.addEventListener('online', updateOnline);
+window.addEventListener('offline', updateOnline);
+updateOnline();
+
+// ─── APP LOGIC ───
+const qualitySlider = document.getElementById('qualitySlider');
+const qualityVal    = document.getElementById('qualityVal');
+const sizeSlider    = document.getElementById('sizeSlider');
+const sizeVal       = document.getElementById('sizeVal');
+const fileInput     = document.getElementById('fileInput');
+const dropZone      = document.getElementById('dropZone');
+const compressBtn   = document.getElementById('compressBtn');
+const dlAllBtn      = document.getElementById('dlAllBtn');
+const clearBtn      = document.getElementById('clearBtn');
+const queueWrap     = document.getElementById('queueWrap');
+const queueList     = document.getElementById('queueList');
+const queueTitle    = document.getElementById('queueTitle');
+const progressBar   = document.getElementById('progressBar');
+const progressFill  = document.getElementById('progressFill');
+const canvas        = document.getElementById('canvas');
+const ctx           = canvas.getContext('2d');
+
+const MAX_PX_VALUES = [512, 800, 1024, 1280, 1600, 2048, 3000, 4096, 0];
+const MAX_PX_LABELS = ['512','800','1024','1280','1600','2048','3000','4096','Ориг'];
+
+let selectedFiles = [];
+let results = [];
+let outputFormat = 'image/jpeg';
+
+qualitySlider.addEventListener('input', () => qualityVal.textContent = qualitySlider.value + '%');
+sizeSlider.addEventListener('input', () => sizeVal.textContent = MAX_PX_LABELS[+sizeSlider.value]);
+
+document.querySelectorAll('.fmt-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.fmt-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    outputFormat = btn.dataset.fmt;
+  });
+});
+
+fileInput.addEventListener('change', e => handleFiles(e.target.files));
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  handleFiles(e.dataTransfer.files);
+});
+
+function handleFiles(files) {
+  const imgs = Array.from(files).filter(f => f.type.startsWith('image/'));
+  if (!imgs.length) return;
+  selectedFiles = imgs;
+  compressBtn.disabled = false;
+  results = [];
+  queueWrap.style.display = 'none';
+  dlAllBtn.style.display = 'none';
+  queueList.innerHTML = '';
+  compressBtn.textContent = `⚡ Сжать (${imgs.length})`;
+}
+
+compressBtn.addEventListener('click', async () => {
+  if (!selectedFiles.length) return;
+  compressBtn.disabled = true;
+  results = [];
+  queueList.innerHTML = '';
+  queueWrap.style.display = 'flex';
+  dlAllBtn.style.display = 'none';
+  progressBar.style.display = 'block';
+  progressFill.style.width = '0%';
+
+  const quality = +qualitySlider.value / 100;
+  const maxPx   = MAX_PX_VALUES[+sizeSlider.value];
+  const ext     = outputFormat === 'image/jpeg' ? 'jpg'
+                : outputFormat === 'image/webp' ? 'webp' : 'png';
+  const total   = selectedFiles.length;
+
+  for (let i = 0; i < total; i++) {
+    try {
+      const result = await compressFile(selectedFiles[i], quality, maxPx, ext);
+      results.push(result);
+      appendItem(result);
+    } catch(e) { console.error(e); }
+    progressFill.style.width = ((i + 1) / total * 100) + '%';
+  }
+
+  progressBar.style.display = 'none';
+  compressBtn.disabled = false;
+  compressBtn.textContent = '⚡ Сжать снова';
+  queueTitle.textContent = `Готово — ${results.length} фото`;
+  if (results.length > 1) dlAllBtn.style.display = 'block';
+});
+
+function compressFile(file, quality, maxPx, ext) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (maxPx && (width > maxPx || height > maxPx)) {
+        if (width >= height) { height = Math.round(height * maxPx / width); width = maxPx; }
+        else { width = Math.round(width * maxPx / height); height = maxPx; }
+      }
+      canvas.width = width; canvas.height = height;
+      ctx.clearRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(blob => {
+        if (!blob) return reject('toBlob failed');
+        resolve({
+          name: file.name.replace(/\.[^.]+$/, '') + '_compressed.' + ext,
+          origSize: file.size,
+          newSize: blob.size,
+          blob,
+          thumb: canvas.toDataURL('image/jpeg', 0.3),
+          dims: `${width}×${height}`
+        });
+      }, outputFormat, quality);
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+function formatSize(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(2) + ' MB';
+}
+
+function appendItem(r) {
+  const ratio = Math.round((1 - r.newSize / r.origSize) * 100);
+  const item = document.createElement('div');
+  item.className = 'queue-item';
+  item.innerHTML = `
+    <img class="thumb" src="${r.thumb}" alt="">
+    <div class="info">
+      <div class="fname">${r.name}</div>
+      <div class="sizes">
+        ${formatSize(r.origSize)} → <span class="new">${formatSize(r.newSize)}</span>
+        <span class="ratio"> −${ratio}%</span> · ${r.dims}
+      </div>
+    </div>
+    <button class="dl-btn" title="Скачать">↓</button>
+  `;
+  item.querySelector('.dl-btn').addEventListener('click', () => downloadBlob(r.blob, r.name));
+  queueList.appendChild(item);
+}
+
+function downloadBlob(blob, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
+dlAllBtn.addEventListener('click', async () => {
+  if (!results.length) return;
+  dlAllBtn.textContent = '⏳ Пакую...';
+  dlAllBtn.disabled = true;
+  try {
+    if (typeof JSZip === 'undefined') {
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+    }
+    const zip = new JSZip();
+    results.forEach(r => zip.file(r.name, r.blob));
+    const content = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 1 } });
+    downloadBlob(content, 'compressed_photos.zip');
+  } catch(e) { alert('Ошибка ZIP: ' + e); }
+  dlAllBtn.textContent = '↓ Все';
+  dlAllBtn.disabled = false;
+});
+
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+
+clearBtn.addEventListener('click', () => {
+  selectedFiles = []; results = [];
+  queueList.innerHTML = '';
+  queueWrap.style.display = 'none';
+  dlAllBtn.style.display = 'none';
+  compressBtn.disabled = true;
+  compressBtn.textContent = '⚡ Сжать';
+  fileInput.value = '';
+});
+</script>
+</body>
+</html>
