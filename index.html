@@ -227,86 +227,31 @@
   </div>
 </div>
 
-<!-- ADMIN OVERLAY -->
-<div class="admin-overlay" id="adminOverlay">
-  <div class="admin-box">
-    <div class="admin-header">
-      <h2>⚙ Admin</h2>
-      <button class="admin-close" id="adminClose">✕</button>
-    </div>
-
-    <!-- Password -->
-    <div class="pass-screen" id="passScreen">
-      <p>Admin password</p>
-      <input type="password" class="pass-input" id="passInput" placeholder="••••••" maxlength="32">
-      <div class="pass-err" id="passErr">Incorrect password</div>
-      <button class="btn-pass" id="passBtn">Enter →</button>
-    </div>
-
-    <!-- Content -->
-    <div class="admin-body" id="adminBody" style="display:none">
-
-      <!-- Settings -->
-      <div>
-        <div class="sec-title">Ad Settings</div>
-        <div class="srow">
-          <div><div class="slabel">Ads enabled</div><div class="ssub">Show after free uses</div></div>
-          <label class="toggle"><input type="checkbox" id="togEnabled" checked><span class="tslider"></span></label>
-        </div>
-        <div class="srow">
-          <div><div class="slabel">Free compressions</div><div class="ssub">Before showing ad</div></div>
-          <input type="number" class="num-input" id="inpFree" value="1" min="1" max="50">
-        </div>
-        <div class="srow">
-          <div><div class="slabel">Skip timer (sec)</div><div class="ssub">Before skip button appears</div></div>
-          <input type="number" class="num-input" id="inpTimer" value="5" min="3" max="30">
-        </div>
-      </div>
-
-      <!-- Ads list -->
-      <div>
-        <div class="sec-title">Ads list (<span id="adsCnt">0</span>)</div>
-        <div class="ads-list" id="adsList"><div class="no-ads">No ads yet</div></div>
-      </div>
-
-      <!-- Add ad -->
-      <div>
-        <div class="sec-title">Add new ad</div>
-        <div class="form-group">
-          <label>Banner image URL</label>
-          <input type="url" id="inpImgUrl" placeholder="https://example.com/banner.jpg">
-        </div>
-        <div class="form-group">
-          <label>Or upload image</label>
-          <input type="file" id="inpImgFile" accept="image/*">
-        </div>
-        <div class="form-group">
-          <label>Click URL *</label>
-          <input type="url" id="inpUrl" placeholder="https://your-service.com">
-        </div>
-        <div class="form-group">
-          <label>Description</label>
-          <textarea id="inpDesc" placeholder="Short promo text..."></textarea>
-        </div>
-        <button class="btn-add" id="btnAdd">+ Add Ad</button>
-      </div>
-
-    </div>
-  </div>
-</div>
-
 <canvas id="canvas"></canvas>
 
 <script>
 // ─── CONFIG ───
-// SHA-256 hash of your password (default: admin1234)
-// Generate your hash at: https://emn178.github.io/online-tools/sha256.html
-const ADMIN_HASH = 'bd2d19747f1773a43c33366e676810d6cfe2464d3136d90e9b8fd179fbbbed29';
+const ADS_API = 'https://1525.pro/photopress-ads/ads-api.php';
 
 // ─── STORAGE ───
 let settings = JSON.parse(localStorage.getItem('pp_s') || JSON.stringify({ enabled:true, free:1, timer:5 }));
 let ads      = JSON.parse(localStorage.getItem('pp_a') || '[]');
 let count    = parseInt(localStorage.getItem('pp_c') || '0');
+
+// Загружаем рекламу с сервера при старте
+async function loadAdsFromServer() {
+  try {
+    const res  = await fetch(ADS_API + '?action=get');
+    const data = await res.json();
+    if (data.ok && data.ads.length) {
+      ads = data.ads;
+      localStorage.setItem('pp_a', JSON.stringify(ads));
+    }
+  } catch(e) {
+    // офлайн — используем кэш из localStorage
+  }
+}
+loadAdsFromServer();
 
 // ─── ELEMENTS ───
 const qualitySlider = document.getElementById('qualitySlider');
@@ -496,112 +441,21 @@ document.getElementById('adSkipBtn').addEventListener('click', function() {
   if (pendingCallback) { pendingCallback(); pendingCallback = null; }
 });
 
-// ─── ADMIN ───
-let authed = false;
-let tapCount = 0, tapTimer = null;
-document.querySelector('.logo').addEventListener('click', () => {
-  tapCount++;
-  clearTimeout(tapTimer);
-  tapTimer = setTimeout(() => { tapCount = 0; }, 600);
-  if (tapCount >= 3) {
-    tapCount = 0;
-    openAdmin();
-  }
-});
-
-function openAdmin() {
-  document.getElementById('adminOverlay').classList.add('show');
-  if (!authed) { document.getElementById('passScreen').style.display='flex'; document.getElementById('adminBody').style.display='none'; }
+// ─── SETTINGS FROM SERVER ───
+async function loadSettings() {
+  try {
+    const res  = await fetch(ADS_API.replace('ads-api.php','settings.json'));
+    const data = await res.json();
+    if (data) {
+      settings.enabled = data.enabled ?? true;
+      settings.free    = data.free    ?? 1;
+      settings.timer   = data.timer   ?? 5;
+      localStorage.setItem('pp_s', JSON.stringify(settings));
+      updateBadge();
+    }
+  } catch(e) {}
 }
-
-
-  
-document.getElementById('adminClose').addEventListener('click', () => document.getElementById('adminOverlay').classList.remove('show'));
-
-document.getElementById('passBtn').addEventListener('click', tryPass);
-document.getElementById('passInput').addEventListener('keydown', e => { if(e.key==='Enter') tryPass(); });
-
-async function sha256(str) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
-}
-
-async function tryPass() {
-  const val  = document.getElementById('passInput').value;
-  const hash = await sha256(val);
-  if (hash === ADMIN_HASH) {
-    authed = true;
-    document.getElementById('passScreen').style.display = 'none';
-    document.getElementById('adminBody').style.display = 'flex';
-    loadAdmin();
-  } else {
-    document.getElementById('passErr').style.display = 'block';
-    document.getElementById('passInput').value = '';
-  }
-}
-
-function loadAdmin() {
-  document.getElementById('togEnabled').checked = settings.enabled;
-  document.getElementById('inpFree').value = settings.free;
-  document.getElementById('inpTimer').value = settings.timer;
-  renderAds();
-}
-
-['togEnabled','inpFree','inpTimer'].forEach(id => document.getElementById(id).addEventListener('change', saveSettings));
-
-function saveSettings() {
-  settings.enabled = document.getElementById('togEnabled').checked;
-  settings.free    = parseInt(document.getElementById('inpFree').value) || 1;
-  settings.timer   = parseInt(document.getElementById('inpTimer').value) || 5;
-  localStorage.setItem('pp_s', JSON.stringify(settings));
-  updateBadge();
-}
-
-function renderAds() {
-  document.getElementById('adsCnt').textContent = ads.length;
-  const list = document.getElementById('adsList');
-  if (!ads.length) { list.innerHTML = '<div class="no-ads">No ads yet</div>'; return; }
-  list.innerHTML = '';
-  ads.forEach((ad, i) => {
-    const el = document.createElement('div');
-    el.className = 'ad-item' + (ad.active ? ' is-active' : '');
-    el.innerHTML = `<img src="${ad.image}" onerror="this.style.opacity=0.2">
-      <div><div class="ad-title">${ad.desc || '(no description)'}</div><div class="ad-url">${ad.url}</div></div>
-      <div class="ad-actions">
-        <button class="btn-set" data-i="${i}">${ad.active ? '✓ ON' : 'Set'}</button>
-        <button class="btn-del" data-i="${i}">✕</button>
-      </div>`;
-    list.appendChild(el);
-  });
-  list.querySelectorAll('.btn-set').forEach(b => b.addEventListener('click', () => {
-    ads.forEach((a,j) => a.active = j === +b.dataset.i);
-    saveAds(); renderAds();
-  }));
-  list.querySelectorAll('.btn-del').forEach(b => b.addEventListener('click', () => {
-    ads.splice(+b.dataset.i, 1); saveAds(); renderAds();
-  }));
-}
-
-function saveAds() { localStorage.setItem('pp_a', JSON.stringify(ads)); }
-
-document.getElementById('btnAdd').addEventListener('click', async () => {
-  const imgUrl  = document.getElementById('inpImgUrl').value.trim();
-  const imgFile = document.getElementById('inpImgFile').files[0];
-  const url     = document.getElementById('inpUrl').value.trim();
-  const desc    = document.getElementById('inpDesc').value.trim();
-
-  if (!url) { alert('Click URL is required'); return; }
-  let image = imgUrl;
-  if (!image && imgFile) image = await toBase64(imgFile);
-  if (!image) { alert('Banner image is required'); return; }
-
-  ads.push({ image, url, desc, active: ads.length === 0 });
-  saveAds(); renderAds();
-  document.getElementById('inpImgUrl').value = '';
-  document.getElementById('inpUrl').value = '';
-  document.getElementById('inpDesc').value = '';
-  document.getElementById('inpImgFile').value = '';
-});
+loadSettings();
 
 function toBase64(file) {
   return new Promise(r => { const fr = new FileReader(); fr.onload = e => r(e.target.result); fr.readAsDataURL(file); });
