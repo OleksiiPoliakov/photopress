@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#0a0a0a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PhotoPress">
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22PhotoPress%22%2C%22short_name%22%3A%22PhotoPress%22%2C%22description%22%3A%22Image%20Compressor%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230a0a0a%22%2C%22theme_color%22%3A%22%230a0a0a%22%2C%22orientation%22%3A%22portrait%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%253D%2527http%253A%252F%252Fwww.w3.org%252F2000%252Fsvg%2527%2520viewBox%253D%25270%25200%2520512%2520512%2527%253E%253Crect%2520width%253D%2527512%2527%2520height%253D%2527512%2527%2520fill%253D%2527%25230a0a0a%2527%252F%253E%253Ctext%2520x%253D%2527256%2527%2520y%253D%2527340%2527%2520font-size%253D%2527280%2527%2520text-anchor%253D%2527middle%2527%253E%25F0%259F%2597%259C%25EF%25B8%258F%253C%252Ftext%253E%253C%252Fsvg%253E%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%230a0a0a' rx='80'/><text x='256' y='340' font-size='280' text-anchor='middle'>🗜️</text></svg>">
 <title>PhotoPress — Image Compressor</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
@@ -151,6 +157,7 @@
     <div class="tagline">Image Compressor</div>
   </div>
   <div class="free-badge" id="freeBadge">1 FREE</div>
+  <button id="installBtn" style="display:none; margin-left:8px; background:var(--accent); color:var(--bg); border:none; font-family:var(--display); font-weight:900; font-size:0.7rem; letter-spacing:0.06em; text-transform:uppercase; padding:6px 12px; border-radius:3px; cursor:pointer;">⬇ Install</button>
 </header>
 
 <main>
@@ -599,6 +606,45 @@ document.getElementById('btnAdd').addEventListener('click', async () => {
 function toBase64(file) {
   return new Promise(r => { const fr = new FileReader(); fr.onload = e => r(e.target.result); fr.readAsDataURL(file); });
 }
+
+// ─── SERVICE WORKER (offline support) ───
+if ('serviceWorker' in navigator) {
+  const swCode = `
+    const CACHE = 'photopress-v1';
+    self.addEventListener('install', e => { self.skipWaiting(); });
+    self.addEventListener('activate', e => { e.waitUntil(clients.claim()); });
+    self.addEventListener('fetch', e => {
+      e.respondWith(
+        caches.match(e.request).then(cached => cached || fetch(e.request).then(resp => {
+          const clone = resp.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+          return resp;
+        }).catch(() => cached))
+      );
+    });
+  `;
+  const blob  = new Blob([swCode], { type: 'application/javascript' });
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl).catch(() => {});
+}
+
+// ─── PWA INSTALL BUTTON ───
+let deferredPrompt = null;
+const installBtn = document.getElementById('installBtn');
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installBtn.style.display = 'block';
+});
+installBtn.addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  if (outcome === 'accepted') installBtn.style.display = 'none';
+  deferredPrompt = null;
+});
+window.addEventListener('appinstalled', () => { installBtn.style.display = 'none'; });
 </script>
 </body>
 </html>
