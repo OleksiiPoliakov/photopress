@@ -1,420 +1,177 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<meta name="theme-color" content="#0d0d0d">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="PhotoPress">
-<meta name="application-name" content="PhotoPress">
-<title>PhotoPress</title>
-
-<!-- PWA Manifest inline -->
-<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22PhotoPress%22%2C%22short_name%22%3A%22PhotoPress%22%2C%22description%22%3A%22%D0%A1%D0%B6%D0%B0%D1%82%D0%B8%D0%B5%20%D1%84%D0%BE%D1%82%D0%BE%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230d0d0d%22%2C%22theme_color%22%3A%22%230d0d0d%22%2C%22orientation%22%3A%22portrait%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%253D%2527http%253A%252F%252Fwww.w3.org%252F2000%252Fsvg%2527%2520viewBox%253D%25270%25200%2520512%2520512%2527%253E%253Crect%2520width%253D%2527512%2527%2520height%253D%2527512%2527%2520fill%253D%2527%25230d0d0d%2527%252F%253E%253Ctext%2520x%253D%2527256%2527%2520y%253D%2527340%2527%2520font-size%253D%2527280%2527%2520text-anchor%253D%2527middle%2527%253E%25F0%259F%2597%259C%25EF%25B8%258F%253C%252Ftext%253E%253C%252Fsvg%253E%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D">
-
-<!-- Apple touch icon inline SVG -->
-<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%230d0d0d' rx='80'/><text x='256' y='340' font-size='280' text-anchor='middle'>🗜️</text></svg>">
-
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Barlow+Condensed:wght@300;500;700;900&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#0a0a0a">
+<title>PhotoPress — Image Compressor</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0d0d0d;
-    --surface: #161616;
-    --border: #2a2a2a;
-    --accent: #e8ff3c;
-    --accent2: #ff5733;
-    --text: #f0f0f0;
-    --muted: #666;
-    --mono: 'Space Mono', monospace;
-    --display: 'Barlow Condensed', sans-serif;
+    --bg: #0a0a0a; --surface: #141414; --surface2: #1c1c1c;
+    --border: #252525; --accent: #c8ff00; --accent2: #ff4d00;
+    --text: #efefef; --muted: #555;
+    --mono: 'DM Mono', monospace; --display: 'Syne', sans-serif;
   }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { background:var(--bg); color:var(--text); font-family:var(--mono); min-height:100dvh; display:flex; flex-direction:column; }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  header { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; position:sticky; top:0; background:var(--bg); z-index:20; }
+  .logo { font-family:var(--display); font-weight:900; font-size:1.6rem; color:var(--accent); letter-spacing:-0.03em; line-height:1; }
+  .tagline { font-size:0.6rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.12em; }
+  .free-badge { margin-left:auto; font-size:0.58rem; padding:4px 10px; border-radius:2px; border:1px solid var(--border); color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; transition:all 0.2s; }
+  .free-badge.used { border-color:var(--accent2); color:var(--accent2); }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--mono);
-    min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    overflow-x: hidden;
-  }
+  main { flex:1; padding:18px 16px; display:flex; flex-direction:column; gap:16px; max-width:560px; width:100%; margin:0 auto; }
 
-  header {
-    padding: 18px 20px 14px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    position: sticky;
-    top: 0;
-    background: var(--bg);
-    z-index: 10;
-  }
-  header h1 {
-    font-family: var(--display);
-    font-weight: 900;
-    font-size: 2rem;
-    letter-spacing: -0.02em;
-    color: var(--accent);
-    line-height: 1;
-  }
-  header span {
-    font-size: 0.65rem;
-    color: var(--muted);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-  }
-  .install-btn {
-    margin-left: auto;
-    background: var(--accent);
-    color: var(--bg);
-    border: none;
-    font-family: var(--display);
-    font-weight: 700;
-    font-size: 0.75rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 6px 12px;
-    border-radius: 3px;
-    cursor: pointer;
-    display: none;
-    white-space: nowrap;
-  }
+  .drop-zone { border:2px dashed var(--border); border-radius:6px; padding:32px 20px; text-align:center; cursor:pointer; position:relative; background:var(--surface); transition:border-color 0.15s, background 0.15s; overflow:hidden; }
+  .drop-zone.drag-over { border-color:var(--accent); background:rgba(200,255,0,0.03); }
+  .drop-zone input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+  .dz-icon { font-size:2.4rem; margin-bottom:8px; display:block; opacity:0.3; transition:opacity 0.2s; }
+  .drop-zone:hover .dz-icon, .drop-zone.drag-over .dz-icon { opacity:1; }
+  .dz-label { font-family:var(--display); font-size:1.15rem; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; }
+  .dz-sub { font-size:0.58rem; color:var(--muted); margin-top:4px; text-transform:uppercase; letter-spacing:0.1em; }
+  .corner { position:absolute; width:14px; height:14px; border-color:var(--accent); border-style:solid; opacity:0.4; }
+  .corner.tl { top:7px; left:7px; border-width:2px 0 0 2px; }
+  .corner.tr { top:7px; right:7px; border-width:2px 2px 0 0; }
+  .corner.bl { bottom:7px; left:7px; border-width:0 0 2px 2px; }
+  .corner.br { bottom:7px; right:7px; border-width:0 2px 2px 0; }
 
-  main {
-    flex: 1;
-    padding: 20px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-    max-width: 600px;
-    width: 100%;
-    margin: 0 auto;
-  }
+  .controls { background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:14px 16px; display:flex; flex-direction:column; gap:12px; }
+  .ctrl-row { display:flex; align-items:center; gap:10px; }
+  .ctrl-label { font-size:0.58rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--muted); flex-shrink:0; min-width:66px; }
+  .ctrl-val { font-family:var(--display); font-weight:800; font-size:1rem; color:var(--accent); min-width:48px; text-align:right; }
+  input[type=range] { -webkit-appearance:none; flex:1; height:3px; background:var(--border); border-radius:2px; outline:none; cursor:pointer; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:18px; height:18px; background:var(--accent); cursor:pointer; box-shadow:0 0 0 3px var(--bg), 0 0 0 4px var(--accent); }
+  .fmt-row { display:flex; gap:6px; }
+  .fmt-btn { flex:1; padding:7px 4px; border:1px solid var(--border); background:transparent; color:var(--muted); font-family:var(--mono); font-size:0.65rem; text-transform:uppercase; cursor:pointer; border-radius:3px; transition:all 0.12s; }
+  .fmt-btn.active { border-color:var(--accent); color:var(--accent); background:rgba(200,255,0,0.05); }
 
-  /* ─── OFFLINE BADGE ─── */
-  .offline-badge {
-    display: none;
-    background: var(--surface);
-    border: 1px solid var(--accent2);
-    border-radius: 3px;
-    padding: 8px 12px;
-    font-size: 0.65rem;
-    color: var(--accent2);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    text-align: center;
-  }
+  .progress-bar { height:2px; background:var(--border); border-radius:2px; overflow:hidden; display:none; }
+  .progress-bar .fill { height:100%; background:var(--accent); transition:width 0.2s; }
 
-  /* ─── DROP ZONE ─── */
-  .drop-zone {
-    border: 2px dashed var(--border);
-    border-radius: 4px;
-    padding: 36px 20px;
-    text-align: center;
-    cursor: pointer;
-    position: relative;
-    transition: border-color 0.15s, background 0.15s;
-    background: var(--surface);
-    overflow: hidden;
-  }
-  .drop-zone.drag-over {
-    border-color: var(--accent);
-    background: rgba(232,255,60,0.04);
-  }
-  .drop-zone input[type=file] {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
-    width: 100%;
-    height: 100%;
-  }
-  .drop-zone .icon {
-    font-size: 3rem;
-    margin-bottom: 10px;
-    display: block;
-    filter: grayscale(1) brightness(0.5);
-    transition: filter 0.2s;
-  }
-  .drop-zone:hover .icon, .drop-zone.drag-over .icon { filter: none; }
-  .drop-zone .label {
-    font-family: var(--display);
-    font-size: 1.3rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--text);
-  }
-  .drop-zone .sublabel {
-    font-size: 0.65rem;
-    color: var(--muted);
-    margin-top: 4px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-  .drop-zone .corner {
-    position: absolute;
-    width: 16px;
-    height: 16px;
-    border-color: var(--accent);
-    border-style: solid;
-    opacity: 0.6;
-  }
-  .drop-zone .corner.tl { top: 8px; left: 8px; border-width: 2px 0 0 2px; }
-  .drop-zone .corner.tr { top: 8px; right: 8px; border-width: 2px 2px 0 0; }
-  .drop-zone .corner.bl { bottom: 8px; left: 8px; border-width: 0 0 2px 2px; }
-  .drop-zone .corner.br { bottom: 8px; right: 8px; border-width: 0 2px 2px 0; }
+  .queue-wrap { display:none; flex-direction:column; gap:10px; }
+  .queue-header { display:flex; justify-content:space-between; align-items:center; }
+  .queue-title { font-size:0.58rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--muted); }
+  .clear-btn { font-family:var(--mono); font-size:0.58rem; color:var(--accent2); background:none; border:none; cursor:pointer; text-transform:uppercase; }
+  .queue-list { display:flex; flex-direction:column; gap:8px; }
+  .queue-item { background:var(--surface); border:1px solid var(--border); border-radius:4px; padding:10px 12px; display:grid; grid-template-columns:44px 1fr auto; gap:10px; align-items:center; animation:slideIn 0.2s ease; }
+  @keyframes slideIn { from { opacity:0; transform:translateY(-5px); } to { opacity:1; transform:none; } }
+  .queue-item .thumb { width:44px; height:44px; object-fit:cover; border-radius:3px; background:var(--border); }
+  .queue-item .fname { font-size:0.68rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:2px; }
+  .queue-item .sizes { font-size:0.58rem; color:var(--muted); }
+  .queue-item .sizes .new { color:var(--accent); }
+  .queue-item .sizes .ratio { color:var(--accent2); }
+  .queue-item .dl-btn { background:var(--accent); color:var(--bg); border:none; border-radius:3px; width:32px; height:32px; font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .queue-item .dl-btn:active { background:#a8d900; }
 
-  /* ─── CONTROLS ─── */
-  .controls {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-  .ctrl-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-  }
-  .ctrl-label {
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--muted);
-    flex-shrink: 0;
-    min-width: 70px;
-  }
-  .ctrl-val {
-    font-family: var(--display);
-    font-weight: 700;
-    font-size: 1.1rem;
-    color: var(--accent);
-    min-width: 44px;
-    text-align: right;
-  }
-  input[type=range] {
-    -webkit-appearance: none;
-    flex: 1;
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    outline: none;
-    cursor: pointer;
-  }
-  input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 20px;
-    height: 20px;
-    background: var(--accent);
-    border-radius: 0;
-    cursor: pointer;
-    box-shadow: 0 0 0 3px var(--bg), 0 0 0 4px var(--accent);
-  }
-  .format-row { display: flex; gap: 8px; }
-  .fmt-btn {
-    flex: 1;
-    padding: 8px 6px;
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--muted);
-    font-family: var(--mono);
-    font-size: 0.7rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.12s;
-    border-radius: 2px;
-  }
-  .fmt-btn.active {
-    border-color: var(--accent);
-    color: var(--accent);
-    background: rgba(232,255,60,0.06);
-  }
+  .action-bar { position:sticky; bottom:0; background:var(--bg); border-top:1px solid var(--border); padding:10px 16px; display:flex; gap:8px; max-width:560px; width:100%; margin:0 auto; }
+  .btn-compress { flex:1; padding:13px; background:var(--accent); color:var(--bg); border:none; font-family:var(--display); font-weight:900; font-size:1rem; letter-spacing:0.06em; text-transform:uppercase; cursor:pointer; border-radius:4px; transition:background 0.12s, transform 0.08s; }
+  .btn-compress:active { transform:scale(0.98); background:#a8d900; }
+  .btn-compress:disabled { background:var(--border); color:var(--muted); cursor:default; }
+  .btn-dl-all { padding:13px 14px; background:transparent; color:var(--accent); border:1px solid var(--accent); font-family:var(--display); font-weight:800; font-size:0.8rem; letter-spacing:0.06em; text-transform:uppercase; cursor:pointer; border-radius:4px; white-space:nowrap; display:none; }
 
-  /* ─── PROGRESS ─── */
-  .progress-bar {
-    height: 3px;
-    background: var(--border);
-    border-radius: 2px;
-    overflow: hidden;
-    display: none;
-  }
-  .progress-bar .fill {
-    height: 100%;
-    background: var(--accent);
-    border-radius: 2px;
-    transition: width 0.2s;
-  }
+  /* ─── AD OVERLAY ─── */
+  .ad-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.93); display:none; align-items:center; justify-content:center; z-index:100; padding:20px; }
+  .ad-overlay.show { display:flex; }
+  .ad-box { background:var(--surface); border:1px solid var(--border); border-radius:8px; width:100%; max-width:400px; overflow:hidden; }
+  .ad-label { padding:8px 14px; background:var(--surface2); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+  .ad-label span { font-size:0.55rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--muted); }
+  .ad-timer { font-family:var(--display); font-weight:900; font-size:1rem; color:var(--accent); }
+  .ad-image-wrap { position:relative; cursor:pointer; overflow:hidden; }
+  .ad-image-wrap img { width:100%; max-height:220px; object-fit:cover; display:block; }
+  .ad-click-hint { position:absolute; bottom:10px; right:10px; background:rgba(0,0,0,0.7); border:1px solid var(--accent); color:var(--accent); font-size:0.58rem; padding:4px 10px; border-radius:2px; text-transform:uppercase; letter-spacing:0.08em; }
+  .ad-footer { padding:12px 14px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .ad-desc { font-size:0.68rem; color:var(--text); line-height:1.4; flex:1; }
+  .ad-skip-btn { background:var(--surface2); border:1px solid var(--border); color:var(--muted); font-family:var(--mono); font-size:0.6rem; text-transform:uppercase; letter-spacing:0.08em; padding:7px 12px; border-radius:3px; cursor:not-allowed; white-space:nowrap; transition:all 0.2s; flex-shrink:0; }
+  .ad-skip-btn.ready { border-color:var(--accent); color:var(--accent); cursor:pointer; }
 
-  /* ─── QUEUE ─── */
-  .queue-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .queue-title {
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--muted);
-  }
-  .clear-btn {
-    font-family: var(--mono);
-    font-size: 0.6rem;
-    color: var(--accent2);
-    background: none;
-    border: none;
-    cursor: pointer;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
-  .queue-list { display: flex; flex-direction: column; gap: 8px; }
-  .queue-item {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 3px;
-    padding: 10px 12px;
-    display: grid;
-    grid-template-columns: 48px 1fr auto;
-    gap: 10px;
-    align-items: center;
-    animation: slideIn 0.2s ease;
-  }
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateY(-6px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .queue-item .thumb {
-    width: 48px;
-    height: 48px;
-    object-fit: cover;
-    border-radius: 2px;
-    background: var(--border);
-  }
-  .queue-item .info { overflow: hidden; }
-  .queue-item .fname {
-    font-size: 0.72rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    color: var(--text);
-    margin-bottom: 2px;
-  }
-  .queue-item .sizes { font-size: 0.6rem; color: var(--muted); }
-  .queue-item .sizes .new { color: var(--accent); }
-  .queue-item .sizes .ratio { color: var(--accent2); font-weight: 700; }
-  .queue-item .dl-btn {
-    background: var(--accent);
-    color: var(--bg);
-    border: none;
-    border-radius: 2px;
-    width: 34px;
-    height: 34px;
-    font-size: 1.1rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    transition: background 0.12s;
-  }
-  .queue-item .dl-btn:active { background: #c8df00; }
+  /* ─── ADMIN ─── */
+  .logo { cursor: pointer; }
+  .admin-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.96); display:none; align-items:flex-start; justify-content:center; z-index:200; padding:20px; overflow-y:auto; }
+  .admin-overlay.show { display:flex; }
+  .admin-box { background:var(--surface); border:1px solid var(--border); border-radius:8px; width:100%; max-width:480px; margin:auto; }
+  .admin-header { padding:14px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .admin-header h2 { font-family:var(--display); font-weight:900; font-size:1.1rem; color:var(--accent); text-transform:uppercase; }
+  .admin-close { background:none; border:none; color:var(--muted); font-size:1.2rem; cursor:pointer; }
+  .admin-body { padding:18px; display:flex; flex-direction:column; gap:18px; }
+  .sec-title { font-size:0.55rem; text-transform:uppercase; letter-spacing:0.14em; color:var(--muted); margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid var(--border); }
 
-  /* ─── ACTION BAR ─── */
-  .action-bar {
-    position: sticky;
-    bottom: 0;
-    background: var(--bg);
-    border-top: 1px solid var(--border);
-    padding: 12px 16px;
-    display: flex;
-    gap: 10px;
-    max-width: 600px;
-    width: 100%;
-    margin: 0 auto;
-  }
-  .btn-compress {
-    flex: 1;
-    padding: 14px;
-    background: var(--accent);
-    color: var(--bg);
-    border: none;
-    font-family: var(--display);
-    font-weight: 900;
-    font-size: 1.1rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    cursor: pointer;
-    border-radius: 3px;
-    transition: background 0.12s, transform 0.08s;
-  }
-  .btn-compress:active { transform: scale(0.98); background: #c8df00; }
-  .btn-compress:disabled { background: var(--border); color: var(--muted); cursor: default; }
-  .btn-dl-all {
-    padding: 14px 16px;
-    background: transparent;
-    color: var(--accent);
-    border: 1px solid var(--accent);
-    font-family: var(--display);
-    font-weight: 700;
-    font-size: 0.85rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    cursor: pointer;
-    border-radius: 3px;
-    white-space: nowrap;
-    transition: background 0.12s;
-    display: none;
-  }
-  .btn-dl-all:active { background: rgba(232,255,60,0.1); }
+  .ads-list { display:flex; flex-direction:column; gap:8px; max-height:260px; overflow-y:auto; }
+  .ad-item { background:var(--surface2); border:1px solid var(--border); border-radius:4px; padding:10px 12px; display:grid; grid-template-columns:48px 1fr auto; gap:10px; align-items:center; }
+  .ad-item.is-active { border-color:var(--accent); }
+  .ad-item img { width:48px; height:36px; object-fit:cover; border-radius:2px; background:var(--border); }
+  .ad-item .ad-title { font-size:0.68rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:2px; }
+  .ad-item .ad-url { font-size:0.56rem; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ad-actions { display:flex; gap:4px; flex-shrink:0; }
+  .btn-set { background:var(--accent); color:var(--bg); border:none; font-family:var(--mono); font-size:0.55rem; text-transform:uppercase; padding:4px 8px; border-radius:2px; cursor:pointer; }
+  .btn-del { background:transparent; border:1px solid var(--border); color:var(--accent2); font-family:var(--mono); font-size:0.55rem; padding:4px 8px; border-radius:2px; cursor:pointer; }
+  .no-ads { padding:18px; text-align:center; font-size:0.62rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; }
 
-  canvas { display: none; }
+  .srow { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; }
+  .slabel { font-size:0.65rem; color:var(--text); }
+  .ssub { font-size:0.56rem; color:var(--muted); margin-top:2px; }
+  .toggle { position:relative; width:40px; height:22px; flex-shrink:0; }
+  .toggle input { opacity:0; width:0; height:0; }
+  .tslider { position:absolute; inset:0; background:var(--border); border-radius:22px; cursor:pointer; transition:background 0.2s; }
+  .tslider:before { content:''; position:absolute; width:16px; height:16px; left:3px; top:3px; background:var(--muted); border-radius:50%; transition:transform 0.2s, background 0.2s; }
+  .toggle input:checked + .tslider { background:rgba(200,255,0,0.15); }
+  .toggle input:checked + .tslider:before { transform:translateX(18px); background:var(--accent); }
+  .num-input { background:var(--surface2); border:1px solid var(--border); color:var(--accent); font-family:var(--display); font-weight:900; font-size:1rem; width:52px; text-align:center; padding:5px; border-radius:3px; outline:none; }
+  .num-input:focus { border-color:var(--accent); }
+
+  .form-group { display:flex; flex-direction:column; gap:4px; margin-bottom:10px; }
+  .form-group label { font-size:0.56rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); }
+  .form-group input, .form-group textarea { background:var(--surface2); border:1px solid var(--border); color:var(--text); font-family:var(--mono); font-size:0.72rem; padding:9px 12px; border-radius:3px; outline:none; transition:border-color 0.15s; }
+  .form-group input:focus, .form-group textarea:focus { border-color:var(--accent); }
+  .form-group textarea { resize:vertical; min-height:55px; }
+  .btn-add { background:var(--accent); color:var(--bg); border:none; font-family:var(--display); font-weight:900; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.06em; padding:11px; border-radius:4px; cursor:pointer; width:100%; transition:background 0.12s; }
+  .btn-add:active { background:#a8d900; }
+
+  .pass-screen { padding:28px 18px; display:flex; flex-direction:column; gap:12px; align-items:center; }
+  .pass-screen p { font-size:0.62rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; }
+  .pass-input { background:var(--surface2); border:1px solid var(--border); color:var(--text); font-family:var(--mono); font-size:0.9rem; padding:10px 14px; border-radius:4px; outline:none; width:100%; text-align:center; letter-spacing:0.2em; }
+  .pass-input:focus { border-color:var(--accent); }
+  .pass-err { font-size:0.6rem; color:var(--accent2); text-transform:uppercase; letter-spacing:0.1em; display:none; }
+  .btn-pass { background:var(--accent); color:var(--bg); border:none; font-family:var(--display); font-weight:900; font-size:0.9rem; text-transform:uppercase; padding:11px; border-radius:4px; cursor:pointer; width:100%; }
+
+  canvas { display:none; }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>PhotoPress</h1>
-  <span>Сжатие фото</span>
-  <button class="install-btn" id="installBtn">⬇ Установить</button>
+  <div>
+    <div class="logo">PhotoPress</div>
+    <div class="tagline">Image Compressor</div>
+  </div>
+  <div class="free-badge" id="freeBadge">1 FREE</div>
 </header>
 
 <main>
-  <div class="offline-badge" id="offlineBadge">⚡ Офлайн режим</div>
-
   <div class="drop-zone" id="dropZone">
     <div class="corner tl"></div><div class="corner tr"></div>
     <div class="corner bl"></div><div class="corner br"></div>
     <input type="file" id="fileInput" accept="image/*" multiple>
-    <span class="icon">🗜️</span>
-    <div class="label">Выбрать фото</div>
-    <div class="sublabel">или перетащить · JPG, PNG, WEBP</div>
+    <span class="dz-icon">🗜️</span>
+    <div class="dz-label">Drop images here</div>
+    <div class="dz-sub">or click to select · JPG · PNG · WEBP</div>
   </div>
 
   <div class="controls">
     <div class="ctrl-row">
-      <span class="ctrl-label">Качество</span>
+      <span class="ctrl-label">Quality</span>
       <input type="range" id="qualitySlider" min="10" max="100" value="75">
       <span class="ctrl-val" id="qualityVal">75%</span>
     </div>
     <div class="ctrl-row">
-      <span class="ctrl-label">Макс. px</span>
+      <span class="ctrl-label">Max px</span>
       <input type="range" id="sizeSlider" min="0" max="8" value="4">
       <span class="ctrl-val" id="sizeVal">2048</span>
     </div>
     <div class="ctrl-row">
-      <span class="ctrl-label">Формат</span>
-      <div class="format-row">
+      <span class="ctrl-label">Format</span>
+      <div class="fmt-row">
         <button class="fmt-btn active" data-fmt="image/jpeg">JPEG</button>
         <button class="fmt-btn" data-fmt="image/webp">WEBP</button>
         <button class="fmt-btn" data-fmt="image/png">PNG</button>
@@ -422,85 +179,124 @@
     </div>
   </div>
 
-  <div class="progress-bar" id="progressBar">
-    <div class="fill" id="progressFill"></div>
-  </div>
+  <div class="progress-bar" id="progressBar"><div class="fill" id="progressFill"></div></div>
 
-  <div id="queueWrap" style="display:none; flex-direction:column; gap:10px;">
+  <div class="queue-wrap" id="queueWrap">
     <div class="queue-header">
-      <span class="queue-title" id="queueTitle">Результаты</span>
-      <button class="clear-btn" id="clearBtn">× очистить</button>
+      <span class="queue-title" id="queueTitle">Results</span>
+      <button class="clear-btn" id="clearBtn">× clear</button>
     </div>
     <div class="queue-list" id="queueList"></div>
   </div>
 </main>
 
 <div class="action-bar">
-  <button class="btn-compress" id="compressBtn" disabled>⚡ Сжать</button>
-  <button class="btn-dl-all" id="dlAllBtn">↓ Все</button>
+  <button class="btn-compress" id="compressBtn" disabled>⚡ Compress</button>
+  <button class="btn-dl-all" id="dlAllBtn">↓ All ZIP</button>
+</div>
+
+
+
+<!-- AD OVERLAY -->
+<div class="ad-overlay" id="adOverlay">
+  <div class="ad-box">
+    <div class="ad-label">
+      <span>Advertisement</span>
+      <span class="ad-timer" id="adTimer">5</span>
+    </div>
+    <div class="ad-image-wrap" id="adImageWrap">
+      <img id="adImage" src="" alt="">
+      <div class="ad-click-hint">Learn more →</div>
+    </div>
+    <div class="ad-footer">
+      <div class="ad-desc" id="adDesc"></div>
+      <button class="ad-skip-btn" id="adSkipBtn">Wait 5s</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN OVERLAY -->
+<div class="admin-overlay" id="adminOverlay">
+  <div class="admin-box">
+    <div class="admin-header">
+      <h2>⚙ Admin</h2>
+      <button class="admin-close" id="adminClose">✕</button>
+    </div>
+
+    <!-- Password -->
+    <div class="pass-screen" id="passScreen">
+      <p>Admin password</p>
+      <input type="password" class="pass-input" id="passInput" placeholder="••••••" maxlength="32">
+      <div class="pass-err" id="passErr">Incorrect password</div>
+      <button class="btn-pass" id="passBtn">Enter →</button>
+    </div>
+
+    <!-- Content -->
+    <div class="admin-body" id="adminBody" style="display:none">
+
+      <!-- Settings -->
+      <div>
+        <div class="sec-title">Ad Settings</div>
+        <div class="srow">
+          <div><div class="slabel">Ads enabled</div><div class="ssub">Show after free uses</div></div>
+          <label class="toggle"><input type="checkbox" id="togEnabled" checked><span class="tslider"></span></label>
+        </div>
+        <div class="srow">
+          <div><div class="slabel">Free compressions</div><div class="ssub">Before showing ad</div></div>
+          <input type="number" class="num-input" id="inpFree" value="1" min="1" max="50">
+        </div>
+        <div class="srow">
+          <div><div class="slabel">Skip timer (sec)</div><div class="ssub">Before skip button appears</div></div>
+          <input type="number" class="num-input" id="inpTimer" value="5" min="3" max="30">
+        </div>
+      </div>
+
+      <!-- Ads list -->
+      <div>
+        <div class="sec-title">Ads list (<span id="adsCnt">0</span>)</div>
+        <div class="ads-list" id="adsList"><div class="no-ads">No ads yet</div></div>
+      </div>
+
+      <!-- Add ad -->
+      <div>
+        <div class="sec-title">Add new ad</div>
+        <div class="form-group">
+          <label>Banner image URL</label>
+          <input type="url" id="inpImgUrl" placeholder="https://example.com/banner.jpg">
+        </div>
+        <div class="form-group">
+          <label>Or upload image</label>
+          <input type="file" id="inpImgFile" accept="image/*">
+        </div>
+        <div class="form-group">
+          <label>Click URL *</label>
+          <input type="url" id="inpUrl" placeholder="https://your-service.com">
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="inpDesc" placeholder="Short promo text..."></textarea>
+        </div>
+        <button class="btn-add" id="btnAdd">+ Add Ad</button>
+      </div>
+
+    </div>
+  </div>
 </div>
 
 <canvas id="canvas"></canvas>
 
 <script>
-// ─── SERVICE WORKER (blob trick — работает без сервера) ───
-const swCode = `
-const CACHE = 'photopress-v1';
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE).then(cache => cache.addAll([]))
-  );
-  self.skipWaiting();
-});
-self.addEventListener('activate', e => {
-  e.waitUntil(clients.claim());
-});
-self.addEventListener('fetch', e => {
-  e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request).then(resp => {
-      const clone = resp.clone();
-      caches.open(CACHE).then(c => c.put(e.request, clone));
-      return resp;
-    }).catch(() => cached))
-  );
-});
-`;
+// ─── CONFIG ───
+// SHA-256 hash of your password (default: admin1234)
+// Generate your hash at: https://emn178.github.io/online-tools/sha256.html
+const ADMIN_HASH = 'bd2d19747f1773a43c33366e676810d6cfe2464d3136d90e9b8fd179fbbbed29';
 
-if ('serviceWorker' in navigator) {
-  const blob = new Blob([swCode], { type: 'application/javascript' });
-  const swUrl = URL.createObjectURL(blob);
-  navigator.serviceWorker.register(swUrl).catch(() => {});
-}
+// ─── STORAGE ───
+let settings = JSON.parse(localStorage.getItem('pp_s') || JSON.stringify({ enabled:true, free:1, timer:5 }));
+let ads      = JSON.parse(localStorage.getItem('pp_a') || '[]');
+let count    = parseInt(localStorage.getItem('pp_c') || '0');
 
-// ─── PWA INSTALL ───
-let deferredPrompt = null;
-const installBtn = document.getElementById('installBtn');
-
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  deferredPrompt = e;
-  installBtn.style.display = 'block';
-});
-installBtn.addEventListener('click', async () => {
-  if (!deferredPrompt) return;
-  deferredPrompt.prompt();
-  const { outcome } = await deferredPrompt.userChoice;
-  if (outcome === 'accepted') installBtn.style.display = 'none';
-  deferredPrompt = null;
-});
-window.addEventListener('appinstalled', () => {
-  installBtn.style.display = 'none';
-});
-
-// ─── OFFLINE BADGE ───
-function updateOnline() {
-  document.getElementById('offlineBadge').style.display = navigator.onLine ? 'none' : 'block';
-}
-window.addEventListener('online', updateOnline);
-window.addEventListener('offline', updateOnline);
-updateOnline();
-
-// ─── APP LOGIC ───
+// ─── ELEMENTS ───
 const qualitySlider = document.getElementById('qualitySlider');
 const qualityVal    = document.getElementById('qualityVal');
 const sizeSlider    = document.getElementById('sizeSlider');
@@ -518,81 +314,82 @@ const progressFill  = document.getElementById('progressFill');
 const canvas        = document.getElementById('canvas');
 const ctx           = canvas.getContext('2d');
 
-const MAX_PX_VALUES = [512, 800, 1024, 1280, 1600, 2048, 3000, 4096, 0];
-const MAX_PX_LABELS = ['512','800','1024','1280','1600','2048','3000','4096','Ориг'];
+const MAX_PX   = [512,800,1024,1280,1600,2048,3000,4096,0];
+const MAX_LABS = ['512','800','1024','1280','1600','2048','3000','4096','Orig'];
 
-let selectedFiles = [];
-let results = [];
-let outputFormat = 'image/jpeg';
+let selectedFiles = [], results = [], outputFormat = 'image/jpeg';
+let pendingCallback = null, timerInt = null;
 
+// ─── SLIDERS ───
 qualitySlider.addEventListener('input', () => qualityVal.textContent = qualitySlider.value + '%');
-sizeSlider.addEventListener('input', () => sizeVal.textContent = MAX_PX_LABELS[+sizeSlider.value]);
+sizeSlider.addEventListener('input',   () => sizeVal.textContent = MAX_LABS[+sizeSlider.value]);
 
-document.querySelectorAll('.fmt-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.fmt-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    outputFormat = btn.dataset.fmt;
-  });
-});
+document.querySelectorAll('.fmt-btn').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.fmt-btn').forEach(x => x.classList.remove('active'));
+  b.classList.add('active'); outputFormat = b.dataset.fmt;
+}));
 
+// ─── FILES ───
 fileInput.addEventListener('change', e => handleFiles(e.target.files));
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-dropZone.addEventListener('drop', e => {
-  e.preventDefault();
-  dropZone.classList.remove('drag-over');
-  handleFiles(e.dataTransfer.files);
-});
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); handleFiles(e.dataTransfer.files); });
 
 function handleFiles(files) {
   const imgs = Array.from(files).filter(f => f.type.startsWith('image/'));
   if (!imgs.length) return;
   selectedFiles = imgs;
   compressBtn.disabled = false;
-  results = [];
-  queueWrap.style.display = 'none';
-  dlAllBtn.style.display = 'none';
+  results = []; queueWrap.style.display = 'none'; dlAllBtn.style.display = 'none';
   queueList.innerHTML = '';
-  compressBtn.textContent = `⚡ Сжать (${imgs.length})`;
+  compressBtn.textContent = `⚡ Compress (${imgs.length})`;
 }
 
-compressBtn.addEventListener('click', async () => {
+// ─── BADGE ───
+function updateBadge() {
+  const badge = document.getElementById('freeBadge');
+  if (!settings.enabled) { badge.textContent = '∞ FREE'; badge.classList.remove('used'); return; }
+  const rem = settings.free - (count % settings.free);
+  if (rem === settings.free) { badge.textContent = `${settings.free} FREE`; badge.classList.remove('used'); }
+  else { badge.textContent = `${rem} left`; badge.classList.add('used'); }
+}
+updateBadge();
+
+// ─── COMPRESS ───
+compressBtn.addEventListener('click', () => {
   if (!selectedFiles.length) return;
-  compressBtn.disabled = true;
-  results = [];
-  queueList.innerHTML = '';
-  queueWrap.style.display = 'flex';
-  dlAllBtn.style.display = 'none';
-  progressBar.style.display = 'block';
-  progressFill.style.width = '0%';
-
-  const quality = +qualitySlider.value / 100;
-  const maxPx   = MAX_PX_VALUES[+sizeSlider.value];
-  const ext     = outputFormat === 'image/jpeg' ? 'jpg'
-                : outputFormat === 'image/webp' ? 'webp' : 'png';
-  const total   = selectedFiles.length;
-
-  for (let i = 0; i < total; i++) {
-    try {
-      const result = await compressFile(selectedFiles[i], quality, maxPx, ext);
-      results.push(result);
-      appendItem(result);
-    } catch(e) { console.error(e); }
-    progressFill.style.width = ((i + 1) / total * 100) + '%';
-  }
-
-  progressBar.style.display = 'none';
-  compressBtn.disabled = false;
-  compressBtn.textContent = '⚡ Сжать снова';
-  queueTitle.textContent = `Готово — ${results.length} фото`;
-  if (results.length > 1) dlAllBtn.style.display = 'block';
+  if (settings.enabled && ads.length && count > 0 && count % settings.free === 0) {
+    pendingCallback = doCompress; showAd();
+  } else { doCompress(); }
 });
 
-function compressFile(file, quality, maxPx, ext) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
+async function doCompress() {
+  compressBtn.disabled = true;
+  results = []; queueList.innerHTML = '';
+  queueWrap.style.display = 'flex'; dlAllBtn.style.display = 'none';
+  progressBar.style.display = 'block'; progressFill.style.width = '0%';
+
+  const quality = +qualitySlider.value / 100;
+  const maxPx   = MAX_PX[+sizeSlider.value];
+  const ext     = outputFormat === 'image/jpeg' ? 'jpg' : outputFormat === 'image/webp' ? 'webp' : 'png';
+
+  for (let i = 0; i < selectedFiles.length; i++) {
+    try { const r = await compressOne(selectedFiles[i], quality, maxPx, ext); results.push(r); appendItem(r); }
+    catch(e) { console.error(e); }
+    progressFill.style.width = ((i+1)/selectedFiles.length*100) + '%';
+  }
+
+  count++; localStorage.setItem('pp_c', count); updateBadge();
+  progressBar.style.display = 'none';
+  compressBtn.disabled = false;
+  compressBtn.textContent = '⚡ Compress again';
+  queueTitle.textContent = `Done — ${results.length} image${results.length !== 1 ? 's' : ''}`;
+  if (results.length > 1) dlAllBtn.style.display = 'block';
+}
+
+function compressOne(file, quality, maxPx, ext) {
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
     img.onload = () => {
       URL.revokeObjectURL(url);
       let { width, height } = img;
@@ -601,92 +398,202 @@ function compressFile(file, quality, maxPx, ext) {
         else { width = Math.round(width * maxPx / height); height = maxPx; }
       }
       canvas.width = width; canvas.height = height;
-      ctx.clearRect(0, 0, width, height);
-      ctx.drawImage(img, 0, 0, width, height);
+      ctx.clearRect(0,0,width,height); ctx.drawImage(img,0,0,width,height);
       canvas.toBlob(blob => {
-        if (!blob) return reject('toBlob failed');
-        resolve({
-          name: file.name.replace(/\.[^.]+$/, '') + '_compressed.' + ext,
-          origSize: file.size,
-          newSize: blob.size,
-          blob,
-          thumb: canvas.toDataURL('image/jpeg', 0.3),
-          dims: `${width}×${height}`
-        });
+        if (!blob) return rej('fail');
+        res({ name: file.name.replace(/\.[^.]+$/, '') + '_compressed.' + ext,
+              origSize: file.size, newSize: blob.size, blob,
+              thumb: canvas.toDataURL('image/jpeg', 0.25), dims: `${width}×${height}` });
       }, outputFormat, quality);
     };
-    img.onerror = reject;
-    img.src = url;
+    img.onerror = rej; img.src = url;
   });
 }
 
-function formatSize(b) {
+function fmtSize(b) {
   if (b < 1024) return b + ' B';
   if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
   return (b/1048576).toFixed(2) + ' MB';
 }
 
 function appendItem(r) {
-  const ratio = Math.round((1 - r.newSize / r.origSize) * 100);
-  const item = document.createElement('div');
-  item.className = 'queue-item';
-  item.innerHTML = `
-    <img class="thumb" src="${r.thumb}" alt="">
-    <div class="info">
-      <div class="fname">${r.name}</div>
-      <div class="sizes">
-        ${formatSize(r.origSize)} → <span class="new">${formatSize(r.newSize)}</span>
-        <span class="ratio"> −${ratio}%</span> · ${r.dims}
-      </div>
-    </div>
-    <button class="dl-btn" title="Скачать">↓</button>
-  `;
-  item.querySelector('.dl-btn').addEventListener('click', () => downloadBlob(r.blob, r.name));
-  queueList.appendChild(item);
+  const pct = Math.round((1 - r.newSize / r.origSize) * 100);
+  const d = document.createElement('div'); d.className = 'queue-item';
+  d.innerHTML = `<img class="thumb" src="${r.thumb}">
+    <div><div class="fname">${r.name}</div>
+    <div class="sizes">${fmtSize(r.origSize)} → <span class="new">${fmtSize(r.newSize)}</span> <span class="ratio">−${pct}%</span> · ${r.dims}</div></div>
+    <button class="dl-btn">↓</button>`;
+  d.querySelector('.dl-btn').addEventListener('click', () => dlBlob(r.blob, r.name));
+  queueList.appendChild(d);
 }
 
-function downloadBlob(blob, name) {
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = name;
-  a.click();
+function dlBlob(blob, name) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
 
 dlAllBtn.addEventListener('click', async () => {
-  if (!results.length) return;
-  dlAllBtn.textContent = '⏳ Пакую...';
-  dlAllBtn.disabled = true;
+  dlAllBtn.textContent = '⏳'; dlAllBtn.disabled = true;
   try {
-    if (typeof JSZip === 'undefined') {
-      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
-    }
-    const zip = new JSZip();
-    results.forEach(r => zip.file(r.name, r.blob));
-    const content = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 1 } });
-    downloadBlob(content, 'compressed_photos.zip');
-  } catch(e) { alert('Ошибка ZIP: ' + e); }
-  dlAllBtn.textContent = '↓ Все';
-  dlAllBtn.disabled = false;
+    if (typeof JSZip === 'undefined') await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+    const zip = new JSZip(); results.forEach(r => zip.file(r.name, r.blob));
+    dlBlob(await zip.generateAsync({ type:'blob', compression:'DEFLATE', compressionOptions:{level:1} }), 'compressed.zip');
+  } catch(e) {}
+  dlAllBtn.textContent = '↓ All ZIP'; dlAllBtn.disabled = false;
 });
 
-function loadScript(src) {
-  return new Promise((res, rej) => {
-    const s = document.createElement('script');
-    s.src = src; s.onload = res; s.onerror = rej;
-    document.head.appendChild(s);
-  });
-}
+function loadScript(src) { return new Promise((r,j) => { const s=document.createElement('script'); s.src=src; s.onload=r; s.onerror=j; document.head.appendChild(s); }); }
 
 clearBtn.addEventListener('click', () => {
-  selectedFiles = []; results = [];
-  queueList.innerHTML = '';
-  queueWrap.style.display = 'none';
-  dlAllBtn.style.display = 'none';
-  compressBtn.disabled = true;
-  compressBtn.textContent = '⚡ Сжать';
-  fileInput.value = '';
+  selectedFiles=[]; results=[]; queueList.innerHTML='';
+  queueWrap.style.display='none'; dlAllBtn.style.display='none';
+  compressBtn.disabled=true; compressBtn.textContent='⚡ Compress'; fileInput.value='';
 });
+
+// ─── ADS ───
+function showAd() {
+  if (!ads.length) { doCompress(); return; }
+  const active = ads.filter(a=>a.active);
+  const ad = active.length ? active[Math.floor(Math.random()*active.length)] : ads[Math.floor(Math.random()*ads.length)];
+
+  document.getElementById('adImage').src = ad.image;
+  document.getElementById('adDesc').textContent = ad.desc || '';
+  document.getElementById('adImageWrap').onclick = () => window.open(ad.url, '_blank');
+
+  let rem = settings.timer;
+  const timerEl = document.getElementById('adTimer');
+  const skipBtn = document.getElementById('adSkipBtn');
+  timerEl.textContent = rem;
+  skipBtn.textContent = `Wait ${rem}s`;
+  skipBtn.className = 'ad-skip-btn';
+
+  document.getElementById('adOverlay').classList.add('show');
+  clearInterval(timerInt);
+  timerInt = setInterval(() => {
+    rem--;
+    timerEl.textContent = rem;
+    if (rem > 0) skipBtn.textContent = `Wait ${rem}s`;
+    else { clearInterval(timerInt); skipBtn.textContent = 'Skip →'; skipBtn.classList.add('ready'); }
+  }, 1000);
+}
+
+document.getElementById('adSkipBtn').addEventListener('click', function() {
+  if (!this.classList.contains('ready')) return;
+  clearInterval(timerInt);
+  document.getElementById('adOverlay').classList.remove('show');
+  if (pendingCallback) { pendingCallback(); pendingCallback = null; }
+});
+
+// ─── ADMIN ───
+let authed = false;
+let tapCount = 0, tapTimer = null;
+document.querySelector('.logo').addEventListener('click', () => {
+  tapCount++;
+  clearTimeout(tapTimer);
+  tapTimer = setTimeout(() => { tapCount = 0; }, 600);
+  if (tapCount >= 3) {
+    tapCount = 0;
+    openAdmin();
+  }
+});
+
+function openAdmin() {
+  document.getElementById('adminOverlay').classList.add('show');
+  if (!authed) { document.getElementById('passScreen').style.display='flex'; document.getElementById('adminBody').style.display='none'; }
+}
+
+
+  
+document.getElementById('adminClose').addEventListener('click', () => document.getElementById('adminOverlay').classList.remove('show'));
+
+document.getElementById('passBtn').addEventListener('click', tryPass);
+document.getElementById('passInput').addEventListener('keydown', e => { if(e.key==='Enter') tryPass(); });
+
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function tryPass() {
+  const val  = document.getElementById('passInput').value;
+  const hash = await sha256(val);
+  if (hash === ADMIN_HASH) {
+    authed = true;
+    document.getElementById('passScreen').style.display = 'none';
+    document.getElementById('adminBody').style.display = 'flex';
+    loadAdmin();
+  } else {
+    document.getElementById('passErr').style.display = 'block';
+    document.getElementById('passInput').value = '';
+  }
+}
+
+function loadAdmin() {
+  document.getElementById('togEnabled').checked = settings.enabled;
+  document.getElementById('inpFree').value = settings.free;
+  document.getElementById('inpTimer').value = settings.timer;
+  renderAds();
+}
+
+['togEnabled','inpFree','inpTimer'].forEach(id => document.getElementById(id).addEventListener('change', saveSettings));
+
+function saveSettings() {
+  settings.enabled = document.getElementById('togEnabled').checked;
+  settings.free    = parseInt(document.getElementById('inpFree').value) || 1;
+  settings.timer   = parseInt(document.getElementById('inpTimer').value) || 5;
+  localStorage.setItem('pp_s', JSON.stringify(settings));
+  updateBadge();
+}
+
+function renderAds() {
+  document.getElementById('adsCnt').textContent = ads.length;
+  const list = document.getElementById('adsList');
+  if (!ads.length) { list.innerHTML = '<div class="no-ads">No ads yet</div>'; return; }
+  list.innerHTML = '';
+  ads.forEach((ad, i) => {
+    const el = document.createElement('div');
+    el.className = 'ad-item' + (ad.active ? ' is-active' : '');
+    el.innerHTML = `<img src="${ad.image}" onerror="this.style.opacity=0.2">
+      <div><div class="ad-title">${ad.desc || '(no description)'}</div><div class="ad-url">${ad.url}</div></div>
+      <div class="ad-actions">
+        <button class="btn-set" data-i="${i}">${ad.active ? '✓ ON' : 'Set'}</button>
+        <button class="btn-del" data-i="${i}">✕</button>
+      </div>`;
+    list.appendChild(el);
+  });
+  list.querySelectorAll('.btn-set').forEach(b => b.addEventListener('click', () => {
+    ads.forEach((a,j) => a.active = j === +b.dataset.i);
+    saveAds(); renderAds();
+  }));
+  list.querySelectorAll('.btn-del').forEach(b => b.addEventListener('click', () => {
+    ads.splice(+b.dataset.i, 1); saveAds(); renderAds();
+  }));
+}
+
+function saveAds() { localStorage.setItem('pp_a', JSON.stringify(ads)); }
+
+document.getElementById('btnAdd').addEventListener('click', async () => {
+  const imgUrl  = document.getElementById('inpImgUrl').value.trim();
+  const imgFile = document.getElementById('inpImgFile').files[0];
+  const url     = document.getElementById('inpUrl').value.trim();
+  const desc    = document.getElementById('inpDesc').value.trim();
+
+  if (!url) { alert('Click URL is required'); return; }
+  let image = imgUrl;
+  if (!image && imgFile) image = await toBase64(imgFile);
+  if (!image) { alert('Banner image is required'); return; }
+
+  ads.push({ image, url, desc, active: ads.length === 0 });
+  saveAds(); renderAds();
+  document.getElementById('inpImgUrl').value = '';
+  document.getElementById('inpUrl').value = '';
+  document.getElementById('inpDesc').value = '';
+  document.getElementById('inpImgFile').value = '';
+});
+
+function toBase64(file) {
+  return new Promise(r => { const fr = new FileReader(); fr.onload = e => r(e.target.result); fr.readAsDataURL(file); });
+}
 </script>
 </body>
 </html>
